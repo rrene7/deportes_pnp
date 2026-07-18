@@ -1,0 +1,41 @@
+name: Desplegar código fuente inicial
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruir y extraer proyecto
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat .package/part-* > /tmp/deportes_pnp-source.tar.gz
+          gzip -t /tmp/deportes_pnp-source.tar.gz
+          tar -xzf /tmp/deportes_pnp-source.tar.gz -C .
+          rm -rf .package
+          rm -f .github/workflows/bootstrap.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          chmod +x install.sh
+
+      - name: Publicar archivos normales del proyecto
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Desplegar código fuente inicial"
+          git push origin main
