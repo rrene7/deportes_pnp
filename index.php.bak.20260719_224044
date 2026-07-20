@@ -281,13 +281,20 @@ $categoriesInline = implode(' · ', $categoryLabels);
                     </select>
                 </label>
 
-                
+                <label>
+                    Contacto de emergencia
+                    <input
+                        name="contacto_emergencia"
+                        required
+                        maxlength="160"
+                    >
+                </label>
 
                 <label>
-                    Teléfono de emergencia <span class="optional">opcional</span>
+                    Teléfono de emergencia
                     <input
                         name="telefono_emergencia"
-                       
+                        required
                         maxlength="30"
                     >
                 </label>

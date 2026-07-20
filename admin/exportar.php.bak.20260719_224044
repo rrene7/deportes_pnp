@@ -31,6 +31,7 @@ $stmt = $pdo->prepare(
         i.sexo,
         i.correo,
         i.telefono,
+        i.contacto_emergencia,
         i.telefono_emergencia,
         i.talla_camiseta,
         c.nombre AS categoria,
@@ -57,38 +58,41 @@ audit(
     (int) $event['id']
 );
 
-function excel_text(mixed $value): string
+function export_excel_text(mixed $value): string
 {
     if ($value === null) {
         return '';
     }
 
     $text = trim((string) $value);
-    $text = str_replace(["\t", "\r", "\n"], ' ', $text);
 
-    // Evita fórmulas inyectadas al abrir el archivo en Excel.
+    /*
+     * Evita que Excel interprete contenido suministrado por usuarios
+     * como una fórmula al abrir el CSV.
+     */
     if ($text !== '' && preg_match('/^[=+\-@]/u', $text) === 1) {
-        $text = "'" . $text;
+        return "'" . $text;
     }
 
     return $text;
 }
 
-function excel_date(?string $value, bool $withTime = false): string
+function export_date(?string $value, bool $withTime = false): string
 {
     if ($value === null || trim($value) === '') {
         return '';
     }
 
     $timestamp = strtotime($value);
+
     if ($timestamp === false) {
-        return excel_text($value);
+        return export_excel_text($value);
     }
 
     return date($withTime ? 'd/m/Y H:i:s' : 'd/m/Y', $timestamp);
 }
 
-function excel_registration_status(string $status): string
+function export_registration_status(string $status): string
 {
     return match ($status) {
         'pago_pendiente' => 'Pago pendiente',
@@ -100,7 +104,7 @@ function excel_registration_status(string $status): string
     };
 }
 
-function excel_payment_status(string $status): string
+function export_payment_status(string $status): string
 {
     return match ($status) {
         'pendiente' => 'Pendiente',
@@ -110,7 +114,7 @@ function excel_payment_status(string $status): string
     };
 }
 
-function excel_sex(string $value): string
+function export_sex(string $value): string
 {
     return match (strtoupper(trim($value))) {
         'F' => 'Femenino',
@@ -121,47 +125,34 @@ function excel_sex(string $value): string
     };
 }
 
-function utf16le(string $text): string
-{
-    if (function_exists('mb_convert_encoding')) {
-        return mb_convert_encoding($text, 'UTF-16LE', 'UTF-8');
-    }
-
-    if (function_exists('iconv')) {
-        $converted = iconv('UTF-8', 'UTF-16LE//IGNORE', $text);
-        if ($converted !== false) {
-            return $converted;
-        }
-    }
-
-    throw new RuntimeException(
-        'El servidor no dispone de mbstring ni iconv para generar el archivo de Excel.'
-    );
-}
-
-function write_excel_row($output, array $values): void
-{
-    $line = implode("\t", array_map('excel_text', $values)) . "\r\n";
-    fwrite($output, utf16le($line));
-}
-
 $filename = 'inscripciones-carrera5k-' . date('Ymd-His') . '.csv';
 
-header('Content-Type: text/csv; charset=UTF-16LE');
+header('Content-Type: text/csv; charset=UTF-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 
+/*
+ * BOM UTF-8 para que Excel reconozca correctamente tildes y eñes.
+ */
+echo "\xEF\xBB\xBF";
+
 $output = fopen('php://output', 'wb');
+
 if ($output === false) {
     http_response_code(500);
     exit('No fue posible generar la exportación.');
 }
 
-// BOM UTF-16LE: Excel reconocerá correctamente á, é, í, ó, ú y ñ.
-fwrite($output, "\xFF\xFE");
+/*
+ * Excel reconoce esta primera instrucción y utiliza punto y coma,
+ * independientemente del separador regional configurado en Windows.
+ */
+fwrite($output, "sep=;\r\n");
 
-write_excel_row($output, [
+$delimiter = ';';
+
+fputcsv($output, [
     'Código de inscripción',
     'Identificación',
     'Primer nombre',
@@ -173,7 +164,8 @@ write_excel_row($output, [
     'Sexo',
     'Correo electrónico',
     'Teléfono',
-    'Teléfono de emergencia (opcional)',
+    'Contacto de emergencia',
+    'Teléfono de emergencia',
     'Talla de camiseta',
     'Categoría',
     'Estado de inscripción',
@@ -183,35 +175,39 @@ write_excel_row($output, [
     'Monto pagado',
     'Estado del pago',
     'Fecha de inscripción',
-]);
+], $delimiter);
 
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    write_excel_row($output, [
-        $row['codigo'] ?? '',
-        $row['identificacion'] ?? '',
-        $row['primer_nombre'] ?? '',
-        $row['segundo_nombre'] ?? '',
-        $row['primer_apellido'] ?? '',
-        $row['segundo_apellido'] ?? '',
-        excel_date($row['fecha_nacimiento'] ?? null),
-        $row['edad_evento'] ?? '',
-        excel_sex((string) ($row['sexo'] ?? '')),
-        $row['correo'] ?? '',
-        $row['telefono'] ?? '',
-        $row['telefono_emergencia'] ?? '',
-        $row['talla_camiseta'] ?? '',
-        $row['categoria'] ?? '',
-        excel_registration_status((string) ($row['estado'] ?? '')),
-        $row['nombre_titular'] ?? '',
-        $row['referencia'] ?? '',
-        excel_date($row['fecha_pago'] ?? null),
+    $exportRow = [
+        export_excel_text($row['codigo'] ?? ''),
+        export_excel_text($row['identificacion'] ?? ''),
+        export_excel_text($row['primer_nombre'] ?? ''),
+        export_excel_text($row['segundo_nombre'] ?? ''),
+        export_excel_text($row['primer_apellido'] ?? ''),
+        export_excel_text($row['segundo_apellido'] ?? ''),
+        export_date($row['fecha_nacimiento'] ?? null),
+        export_excel_text($row['edad_evento'] ?? ''),
+        export_sex((string) ($row['sexo'] ?? '')),
+        export_excel_text($row['correo'] ?? ''),
+        export_excel_text($row['telefono'] ?? ''),
+        export_excel_text($row['contacto_emergencia'] ?? ''),
+        export_excel_text($row['telefono_emergencia'] ?? ''),
+        export_excel_text($row['talla_camiseta'] ?? ''),
+        export_excel_text($row['categoria'] ?? ''),
+        export_registration_status((string) ($row['estado'] ?? '')),
+        export_excel_text($row['nombre_titular'] ?? ''),
+        export_excel_text($row['referencia'] ?? ''),
+        export_date($row['fecha_pago'] ?? null),
         isset($row['monto']) && $row['monto'] !== null
             ? number_format((float) $row['monto'], 2, '.', '')
             : '',
-        excel_payment_status((string) ($row['estado_pago'] ?? '')),
-        excel_date($row['creado_en'] ?? null, true),
-    ]);
+        export_payment_status((string) ($row['estado_pago'] ?? '')),
+        export_date($row['creado_en'] ?? null, true),
+    ];
+
+    fputcsv($output, $exportRow, $delimiter);
 }
 
 fclose($output);
 exit;
+

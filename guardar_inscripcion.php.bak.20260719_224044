@@ -10,7 +10,7 @@ if (!$event || !(bool)$event['inscripciones_abiertas']) {
     redirect('index.php');
 }
 
-$required = ['identificacion','primer_nombre','primer_apellido','fecha_nacimiento','correo','telefono','talla_camiseta','nombre_titular','fecha_pago','monto'];
+$required = ['identificacion','primer_nombre','primer_apellido','fecha_nacimiento','correo','telefono','contacto_emergencia','telefono_emergencia','talla_camiseta','nombre_titular','fecha_pago','monto'];
 foreach ($required as $field) {
     if (trim((string)($_POST[$field] ?? '')) === '') {
         flash('danger', 'Complete todos los campos obligatorios.');
@@ -91,7 +91,7 @@ try {
         trim($_POST['identificacion']), trim($_POST['primer_nombre']), trim($_POST['segundo_nombre'] ?? '') ?: null,
         trim($_POST['primer_apellido']), trim($_POST['segundo_apellido'] ?? '') ?: null,
         $_POST['fecha_nacimiento'], $age, $_POST['sexo'] ?? 'No indica', strtolower(trim($_POST['correo'])), trim($_POST['telefono']),
-        trim((string)($_POST['contacto_emergencia'] ?? '')) ?: null, trim((string)($_POST['telefono_emergencia'] ?? '')) ?: null, $_POST['talla_camiseta'], 1, $_SERVER['REMOTE_ADDR'] ?? null
+        trim($_POST['contacto_emergencia']), trim($_POST['telefono_emergencia']), $_POST['talla_camiseta'], 1, $_SERVER['REMOTE_ADDR'] ?? null
     ]);
     $registrationId = (int)$pdo->lastInsertId();
     $code = 'PN5K-' . str_pad((string)$registrationId, 6, '0', STR_PAD_LEFT);

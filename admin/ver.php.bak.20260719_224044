@@ -106,9 +106,13 @@ require __DIR__ . '/_header.php';
                 <dt>Correo</dt>
                 <dd><?= e($registration['correo']) ?></dd>
             </div>
-                        <div>
-                <dt>Teléfono de emergencia</dt>
-                <dd><?= e($registration['telefono_emergencia'] ?: 'No indicado') ?></dd>
+            <div>
+                <dt>Emergencia</dt>
+                <dd><?= e(
+                    $registration['contacto_emergencia']
+                    . ' · '
+                    . $registration['telefono_emergencia']
+                ) ?></dd>
             </div>
             <div>
                 <dt>Talla</dt>

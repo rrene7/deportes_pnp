@@ -1,0 +1,167 @@
+.admin-user {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+}
+
+.admin-role {
+    margin-top: 4px;
+    color: #9fc7e5;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.roles-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+}
+
+.role-summary-card {
+    min-height: 120px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: var(--shadow);
+}
+
+.role-summary-card p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: .86rem;
+}
+
+.role-chip {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.role-administrador {
+    background: #e7f0ff;
+    color: #164b91;
+}
+
+.role-pagos {
+    background: #fff0d7;
+    color: #8a5200;
+}
+
+.role-kits {
+    background: #e7f8ef;
+    color: #137348;
+}
+
+.role-consulta {
+    background: #eef1f4;
+    color: #4e5f6e;
+}
+
+.user-management-grid {
+    display: grid;
+    grid-template-columns: minmax(290px, .72fr) minmax(0, 1.65fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.user-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.current-account {
+    display: block;
+    margin-top: 3px;
+    color: var(--blue);
+    font-weight: 700;
+}
+
+.audit-filter {
+    display: grid;
+    grid-template-columns: 1.2fr 1.2fr 1fr 1fr auto auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.audit-filter label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: .84rem;
+    font-weight: 700;
+}
+
+.audit-filter input,
+.audit-filter select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #c9d7e3;
+    border-radius: 9px;
+    background: #fff;
+    font: inherit;
+}
+
+.audit-table td {
+    vertical-align: top;
+}
+
+.audit-subline {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+}
+
+.audit-table details {
+    max-width: 340px;
+}
+
+.audit-table summary {
+    color: var(--blue);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.audit-table pre {
+    max-width: 340px;
+    overflow: auto;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f3f7fa;
+    color: var(--ink);
+    font-size: .72rem;
+    white-space: pre-wrap;
+}
+
+@media (max-width: 1050px) {
+    .roles-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .user-management-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .audit-filter {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .roles-summary,
+    .audit-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-user {
+        align-items: flex-start;
+    }
+}
+

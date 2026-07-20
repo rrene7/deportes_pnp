@@ -1,0 +1,3 @@
+<?php
+require __DIR__ . '/src/bootstrap.php';
+require_admin();$id=(int)($_GET['id']??0);$stmt=$pdo->prepare('SELECT archivo_comprobante,nombre_original,mime_type FROM pagos WHERE id=?');$stmt->execute([$id]);$file=$stmt->fetch();if(!$file){http_response_code(404);exit('Archivo no encontrado.');}$path=APP_ROOT.'/storage/uploads/'.$file['archivo_comprobante'];if(!is_file($path)){http_response_code(404);exit('Archivo no disponible.');}header('Content-Type: '.$file['mime_type']);header('Content-Length: '.filesize($path));header('Content-Disposition: inline; filename="'.rawurlencode($file['nombre_original']).'"');header('X-Content-Type-Options: nosniff');readfile($path);exit;
