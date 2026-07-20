@@ -1,0 +1,85 @@
+name: Corregir instalador Git Bash
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-installer:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Corregir lectura interactiva
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("install.sh")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = {
+              '''  read -r -p "$label [$default_value]: " value
+  printf -v "$__var_name" '%s' "${value:-$default_value}"
+''': '''  if ! IFS= read -r -p "$label [$default_value]: " value </dev/tty; then
+    value=""
+  fi
+  printf -v "$__var_name" '%s' "${value:-$default_value}"
+''',
+              '''  read -r -s -p "$label: " value
+  printf '\\n'
+  printf -v "$__var_name" '%s' "$value"
+''': '''  if ! IFS= read -r -s -p "$label: " value </dev/tty; then
+    value=""
+  fi
+  printf '\\n'
+  printf -v "$__var_name" '%s' "$value"
+''',
+              '''    read -r -s -p "Contraseña del administrador (mínimo 8 caracteres): " first
+    printf '\\n'
+''': '''    if ! IFS= read -r -s -p "Contraseña del administrador (mínimo 8 caracteres): " first </dev/tty; then
+      printf '\\n'
+      fail "No fue posible leer la contraseña desde la terminal."
+    fi
+    printf '\\n'
+''',
+              '''    read -r -s -p "Repita la contraseña: " second
+    printf '\\n'
+''': '''    if ! IFS= read -r -s -p "Repita la contraseña: " second </dev/tty; then
+      printf '\\n'
+      fail "No fue posible leer la confirmación de la contraseña desde la terminal."
+    fi
+    printf '\\n'
+''',
+          }
+
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f"No se encontró el bloque esperado para reemplazar:\n{old}")
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8", newline="\n")
+
+      - name: Validar sintaxis Bash
+        shell: bash
+        run: bash -n install.sh
+
+      - name: Publicar corrección
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -f .github/workflows/fix-install-gitbash.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Corregir lectura interactiva en Git Bash"
+          git push origin main
